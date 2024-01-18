@@ -13,7 +13,7 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background: url('https://png.pngtree.com/background/20210710/original/pngtree-year-end-celebration-awards-poster-background-picture-image_1047444.jpg');
+            background: url("{{ get_url(path='bg.jpg') }}");
             background-repeat: no-repeat;
             background-size: cover;
         }
@@ -44,10 +44,12 @@
         }
 
         #result {
+            display: none;
             font-size: 300%;
             margin-top: 20px;
             min-height: 50vh;
             line-height: 50vh;
+            background: url("{{ get_url(path='fireworks.gif') }}");
         }
 
         button {
@@ -141,13 +143,56 @@
             height: 50vh; /* Adjust the size as needed */
             margin: auto;
         }
+
+        .button {
+            display: inline-block;
+            padding: 0.75rem 1.25rem;
+            border-radius: 10rem;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 1rem;
+            letter-spacing: 0.15rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .button:after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0cf;
+            border-radius: 10rem;
+            z-index: -2;
+        }
+        .button:before {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0%;
+            height: 100%;
+            background-color: #008fb3;
+            transition: all 0.3s;
+            border-radius: 10rem;
+            z-index: -1;
+        }
+        .button:hover {
+            color: #fff;
+        }
+        .button:hover:before {
+            width: 100%;
+        }
     </style>
 </head>
 <body>
 
     <div id="container">
         <div id="participants-container">
-            <h2>All Participants</h2>
+            <h2>Danh sách</h2>
             <ol id="participants-list"></ol>
             <button class="btn" onclick="openParticipantsModal()"><i class="fa fa-user-plus"></i></button>
         </div>
@@ -156,12 +201,12 @@
             <div id="result-container">
                 <!-- Loading GIF -->
                 <div id="result"></div>
-                <img id="loadingGif" src="https://static.wixstatic.com/media/7617c8_cb25b551aeb343c69961f5c2c36b2bb1~mv2.gif" alt="Loading...">
+                <img id="loadingGif" src="{{ get_url(path='wheel.gif') }}" alt="Loading...">
             </div>
 
-            <button onclick="drawWinner()">Draw Winner</button>
-            <h2>Winners</h2>
-            <ol id="winners-list"></ol>
+            <button id="drawBtn" class="button" onclick="drawWinner()">Quay thưởng</button>
+            <!-- <h2>Winners</h2>
+            <ol id="winners-list"></ol> -->
         </div>
     </div>
 
@@ -169,9 +214,9 @@
     <div id="participantsModal" onclick="closeParticipantsModal(event)">
         <div id="modalContent" onclick="event.stopPropagation()">
             <span id="closeModal" onclick="closeParticipantsModal()">&times;</span>
-            <h2>Add Participants</h2>
-            <textarea id="newParticipantsTextarea" placeholder="Enter participant names (comma-separated)"></textarea>
-            <button class="btn" onclick="addParticipants()"><i class="text fa fa-check-square-o">Update</i></button>
+            <h2>Thêm chiến hữu</h2>
+            <textarea id="newParticipantsTextarea" placeholder="Nhập tên chiến hữu (ngăn cách bởi dấu phẩy)"></textarea>
+            <button class="btn" onclick="addParticipants()"><i class="text fa fa-check-square-o">Đồng ý</i></button>
         </div>
     </div>
 
@@ -179,29 +224,40 @@
         var allParticipants = [];
         var remainingParticipants = [];
         var winners = [];
+        var wheelStart = new Audio("{{ get_url(path='wheel_start.mp3') }}");
+        var clapping = new Audio("{{ get_url(path='clapping.mp3') }}");
+        var drawBtn = document.getElementById("drawBtn");
 
         function drawWinner() {
+            clapping.pause();
+
             // Check if there are participants
             if (allParticipants.length === 0) {
-                alert("Please enter participant names.");
+                alert("Danh sách khách mời trống.");
                 return;
             }
 
             // If all participants have won, reset the list
             if (remainingParticipants.length === 0) {
-                alert("All participants have won.");
+                alert("Tất cả khách mời đã nhận giải thưởng.");
                 return;
             }
 
+            drawBtn.disabled = true
             // Show loading GIF
             document.getElementById("loadingGif").style.display = "block";
             document.getElementById("result").style.display = "none";
+            wheelStart.currentTime = 0;
+            wheelStart.play();
 
             // Hide previous result after 5 seconds
             setTimeout(function() {
                 document.getElementById("loadingGif").style.display = "none";
+                wheelStart.pause();
+                clapping.play();
                 document.getElementById("result").style.display = "block";
                 showResult();
+                drawBtn.disabled = false
             }, 5000);
 
         }
@@ -218,7 +274,7 @@
             winners.push(winner);
 
             // Display the winner
-            document.getElementById("result").innerHTML = "Congratulations! " + winner;
+            document.getElementById("result").innerHTML = winner;
 
             // Update the winners list
             updateParticipantsList();
@@ -269,15 +325,15 @@
         }
 
         function updateWinnersList() {
-            var winnersList = document.getElementById("winners-list");
-            winnersList.innerHTML = ""; // Clear the list
+            // var winnersList = document.getElementById("winners-list");
+            // winnersList.innerHTML = ""; // Clear the list
 
-            // Populate the winners list
-            winners.forEach(function(winner) {
-                var li = document.createElement("li");
-                li.textContent = winner;
-                winnersList.prepend(li);
-            });
+            // // Populate the winners list
+            // winners.forEach(function(winner) {
+            //     var li = document.createElement("li");
+            //     li.textContent = winner;
+            //     winnersList.prepend(li);
+            // });
         }
 
         function init() {
