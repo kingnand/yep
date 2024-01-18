@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Draw</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: url('https://png.pngtree.com/background/20210710/original/pngtree-year-end-celebration-awards-poster-background-picture-image_1047444.jpg');
+            background-repeat: no-repeat;
+            background-size: cover;
+        }
+
+        #container {
+            display: flex;
+            width: 70%;
+            margin: auto;
+            color: white;
+            font-size: larger;
+            font-style: oblique;
+        }
+
+        #participants-container {
+            width: 30%;
+            padding-right: 20px;
+            box-sizing: border-box;
+        }
+
+        #participants-list {
+            max-height: 80vh;
+            overflow-y: scroll;
+        }
+
+        #winners-container {
+            text-align: center;
+            flex-grow: 1;
+        }
+
+        #result {
+            font-size: 300%;
+            margin-top: 20px;
+            min-height: 50vh;
+            line-height: 50vh;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        input {
+            width: calc(100% - 20px);
+            padding: 5px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 5px;
+        }
+
+        /* Modal Styles */
+        #participantsModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 2;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #modalContent {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            min-width: 50%;
+            max-width: 80%;
+            max-height: 80%;
+            overflow: auto;
+            position: relative;
+        }
+
+        #closeModal {
+            cursor: pointer;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+        }
+
+        #modalContent textarea {
+            min-width: 100%;
+            min-height: 100px;
+        }
+
+        #winners-list {
+            max-height: 20vh;
+            overflow: scroll;
+        }
+
+         /* Style buttons */
+        .btn {
+            background-color: rgb(122, 143, 159); /* Blue background */
+            border: none; /* Remove borders */
+            color: white; /* White text */
+            padding: 12px 16px; /* Some padding */
+            font-size: 16px; /* Set a font size */
+            cursor: pointer; /* Mouse pointer on hover */
+        }
+
+        /* Darker background on mouse-over */
+        .btn:hover {
+            background-color: RoyalBlue;
+        } 
+
+        .btn i.text::before {
+            margin-right: 5px;
+        }
+
+        /* New style for the loading GIF */
+        #loadingGif {
+            display: none;
+            width: 50vh; /* Adjust the size as needed */
+            height: 50vh; /* Adjust the size as needed */
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="container">
+        <div id="participants-container">
+            <h2>All Participants</h2>
+            <ol id="participants-list"></ol>
+            <button class="btn" onclick="openParticipantsModal()"><i class="fa fa-user-plus"></i></button>
+        </div>
+
+        <div id="winners-container">
+            <div id="result-container">
+                <!-- Loading GIF -->
+                <div id="result"></div>
+                <img id="loadingGif" src="https://static.wixstatic.com/media/7617c8_cb25b551aeb343c69961f5c2c36b2bb1~mv2.gif" alt="Loading...">
+            </div>
+
+            <button onclick="drawWinner()">Draw Winner</button>
+            <h2>Winners</h2>
+            <ol id="winners-list"></ol>
+        </div>
+    </div>
+
+    <!-- Participants Modal -->
+    <div id="participantsModal" onclick="closeParticipantsModal(event)">
+        <div id="modalContent" onclick="event.stopPropagation()">
+            <span id="closeModal" onclick="closeParticipantsModal()">&times;</span>
+            <h2>Add Participants</h2>
+            <textarea id="newParticipantsTextarea" placeholder="Enter participant names (comma-separated)"></textarea>
+            <button class="btn" onclick="addParticipants()"><i class="text fa fa-check-square-o">Update</i></button>
+        </div>
+    </div>
+
+    <script>
+        var allParticipants = [];
+        var remainingParticipants = [];
+        var winners = [];
+
+        function drawWinner() {
+            // Check if there are participants
+            if (allParticipants.length === 0) {
+                alert("Please enter participant names.");
+                return;
+            }
+
+            // If all participants have won, reset the list
+            if (remainingParticipants.length === 0) {
+                alert("All participants have won.");
+                return;
+            }
+
+            // Show loading GIF
+            document.getElementById("loadingGif").style.display = "block";
+            document.getElementById("result").style.display = "none";
+
+            // Hide previous result after 5 seconds
+            setTimeout(function() {
+                document.getElementById("loadingGif").style.display = "none";
+                document.getElementById("result").style.display = "block";
+                showResult();
+            }, 5000);
+
+        }
+
+        function showResult() {
+            // Randomly select a winner from the remaining participants
+            var winnerIndex = Math.floor(Math.random() * remainingParticipants.length);
+            var winner = remainingParticipants[winnerIndex];
+
+            // Remove the winner from the remaining participants
+            remainingParticipants.splice(winnerIndex, 1);
+
+            // Add the winner to the list of winners
+            winners.push(winner);
+
+            // Display the winner
+            document.getElementById("result").innerHTML = "Congratulations! " + winner;
+
+            // Update the winners list
+            updateParticipantsList();
+            updateWinnersList();
+        }
+
+        function openParticipantsModal() {
+            document.getElementById("participantsModal").style.display = "flex";
+        }
+
+        function closeParticipantsModal() {
+            document.getElementById("participantsModal").style.display = "none";
+        }
+
+        function addParticipants() {
+            var newParticipantsTextarea = document.getElementById("newParticipantsTextarea");
+            var newParticipantsInput = newParticipantsTextarea.value;
+
+            // Split the input into an array of participant names
+            var newParticipants = newParticipantsInput.split(",").map(function(item) {
+                return item.trim();
+            }).filter(function(item) {
+                return item !== ""
+            });
+
+            // Add the new participants to the list
+            allParticipants = newParticipants.slice(0);
+            remainingParticipants = allParticipants.slice(0);
+
+            // Update the participants list and close the modal
+            updateParticipantsList();
+            closeParticipantsModal();
+
+            // Clear the participants input
+            newParticipantsTextarea.value = "";
+        }
+
+        function updateParticipantsList() {
+            var participantsList = document.getElementById("participants-list");
+            participantsList.innerHTML = ""; // Clear the list
+
+            // Populate the participants list
+            allParticipants.forEach(function(participant) {
+                var li = document.createElement("li");
+                li.textContent = participant;
+                participantsList.appendChild(li);
+            });
+        }
+
+        function updateWinnersList() {
+            var winnersList = document.getElementById("winners-list");
+            winnersList.innerHTML = ""; // Clear the list
+
+            // Populate the winners list
+            winners.forEach(function(winner) {
+                var li = document.createElement("li");
+                li.textContent = winner;
+                winnersList.prepend(li);
+            });
+        }
+
+        function init() {
+            allParticipants = [];
+            remainingParticipants = allParticipants.slice();
+            updateParticipantsList();
+        }
+
+        init();
+    </script>
+
+</body>
+</html>
